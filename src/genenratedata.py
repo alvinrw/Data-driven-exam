@@ -1,36 +1,59 @@
 import numpy as np
 import pandas as pd
-from sklearn.preprocessing import MinMaxScaler
+import math
 
 # Set random seed untuk reproducibility
 np.random.seed(42)
 
-# Jumlah data
-n_samples = 10000
+# Jumlah data (Simulasi 7 hari, data per 1 menit)
+# 7 hari * 24 jam * 60 menit = 10080 data points
+n_samples = 10080
+time_steps = np.arange(n_samples)
 
-print("🌱 Generating HFAC Greenhouse Dataset...")
+print("Generating HFAC Realistic Synthetic Dataset...")
 
 # ==========================================
-# GENERATE SENSOR DATA
+# GENERATE SENSOR DATA (PHYSICS BASED)
 # ==========================================
 
-# Temperature (15-40°C) - distribusi normal dengan mean 27°C
-temperature = np.random.normal(27, 5, n_samples)
+# 1. TIME SIMULATION
+# 1 hari = 1440 menit. Kita pakai fungsi Sinus untuk siklus harian.
+day_cycle = 1440
+time_factor = (2 * np.pi * time_steps) / day_cycle
+
+# 2. LIGHT INTENSITY (0-100%)
+# Matahari terbit jam 6, terbenam jam 18. Puncak jam 12.
+# Sinus -1 sampai 1. Kita geser biar pas siang positif.
+# Logic: Max di siang, 0 di malam.
+light_base = -np.cos(time_factor) # Mulai dari malam (rendah), naik ke siang
+light_intensity = (light_base + 0.2) * 60 # Scale up
+light_intensity = np.clip(light_intensity, 0, 100) # Clip 0-100
+# Tambah variasi awan (random noise reduction)
+cloud_cover = np.random.uniform(0.8, 1.0, n_samples)
+light_intensity = light_intensity * cloud_cover
+
+# 3. TEMPERATURE (15-40°C)
+# Suhu mengikuti cahaya tapi ada lag (terlambat panas, terlambat dingin)
+# Kita geser phase sedikit dari cahaya
+temp_base = -np.cos(time_factor - 0.5) 
+temperature = 25 + (temp_base * 7) # Mean 25, variasi +/- 7 (18-32)
+# Tambah noise random
+temperature += np.random.normal(0, 0.5, n_samples)
 temperature = np.clip(temperature, 15, 40)
 
-# Humidity (30-90% RH) - distribusi normal dengan mean 60%
-humidity = np.random.normal(60, 15, n_samples)
+# 4. HUMIDITY (30-90% RH)
+# Kelembaban berbanding terbalik dengan suhu (Suhu naik, RH turun)
+humidity = 85 - (temp_base * 20) # Mean 85, turun sampai 65 saat panas
+# Tambah noise random
+humidity += np.random.normal(0, 2, n_samples)
 humidity = np.clip(humidity, 30, 90)
 
-# Light intensity (0-100%) - mix antara siang dan malam
-# 60% data siang (high light), 40% malam (low light)
-light_day = np.random.uniform(60, 100, int(n_samples * 0.6))
-light_night = np.random.uniform(0, 40, int(n_samples * 0.4))
-light_intensity = np.concatenate([light_day, light_night])
-np.random.shuffle(light_intensity)
-
-# Motion detected (0 atau 1) - 30% ada motion
-motion = np.random.choice([0, 1], n_samples, p=[0.7, 0.3])
+# 5. MOTION DETECTED (0 atau 1)
+# Lebih banyak aktivitas di siang hari (jam 08.00 - 17.00)
+# Kita pakai probabilitas berdasarkan jam
+hour_of_day = (time_steps % 1440) / 60
+motion_prob = np.where((hour_of_day > 7) & (hour_of_day < 18), 0.6, 0.1)
+motion = np.random.binomial(1, motion_prob)
 
 # ==========================================
 # GENERATE ACTUATOR PWM (0-100%)
@@ -58,7 +81,7 @@ for i in range(n_samples):
     # Nyala kalau suhu > target, makin panas makin kencang
     if temp > TARGET_TEMP:
         temp_diff = temp - TARGET_TEMP
-        fan_cooling_pwm[i] = min(100, (temp_diff / 15) * 100)  # Scale ke 0-100%
+        fan_cooling_pwm[i] = min(100, (temp_diff / 10) * 100)  # Lebih sensitif
     else:
         fan_cooling_pwm[i] = 0
     
@@ -78,7 +101,7 @@ for i in range(n_samples):
     # Nyala kalau humidity < target
     if hum < TARGET_HUMIDITY:
         hum_diff = TARGET_HUMIDITY - hum
-        water_pump_pwm[i] = min(100, (hum_diff / 35) * 100)  # Scale ke 0-100%
+        water_pump_pwm[i] = min(100, (hum_diff / 20) * 100)
     else:
         water_pump_pwm[i] = 0
     
@@ -86,7 +109,7 @@ for i in range(n_samples):
     # Nyala kalau intensitas cahaya < target
     if light < TARGET_LIGHT:
         light_diff = TARGET_LIGHT - light
-        grow_light_pwm[i] = min(100, (light_diff / 70) * 100)  # Scale ke 0-100%
+        grow_light_pwm[i] = min(100, (light_diff / 70) * 100)
     else:
         grow_light_pwm[i] = 0
 
@@ -94,11 +117,11 @@ for i in range(n_samples):
 # TAMBAH NOISE & VARIASI REALISTIS
 # ==========================================
 
-# Tambah noise kecil ke PWM (±5%) untuk simulasi kondisi real
-fan_cooling_pwm += np.random.uniform(-5, 5, n_samples)
-fan_circulation_pwm += np.random.uniform(-5, 5, n_samples)
-water_pump_pwm += np.random.uniform(-5, 5, n_samples)
-grow_light_pwm += np.random.uniform(-5, 5, n_samples)
+# Tambah noise kecil ke PWM (±2%) untuk simulasi kondisi real
+fan_cooling_pwm += np.random.uniform(-2, 2, n_samples)
+fan_circulation_pwm += np.random.uniform(-2, 2, n_samples)
+water_pump_pwm += np.random.uniform(-2, 2, n_samples)
+grow_light_pwm += np.random.uniform(-2, 2, n_samples)
 
 # Clip ke range 0-100
 fan_cooling_pwm = np.clip(fan_cooling_pwm, 0, 100)
@@ -121,23 +144,24 @@ df = pd.DataFrame({
     'grow_light_pwm': grow_light_pwm
 })
 
-# Shuffle dataset
-df = df.sample(frac=1, random_state=42).reset_index(drop=True)
+# Shuffle dataset (PENTING untuk training, tapi kalau mau lihat time series jangan di shuffle dulu)
+# Kita shuffle agar training tidak bias urutan
+df_shuffled = df.sample(frac=1, random_state=42).reset_index(drop=True)
 
 # ==========================================
 # SAVE TO CSV
 # ==========================================
 
 csv_filename = 'hfac_greenhouse_dataset.csv'
-df.to_csv(csv_filename, index=False)
+df_shuffled.to_csv(csv_filename, index=False)
 
-print(f"✅ Dataset generated successfully!")
-print(f"📊 Total samples: {n_samples}")
-print(f"💾 Saved to: {csv_filename}")
-print("\n📈 Dataset Statistics:")
+print(f"Dataset generated successfully!")
+print(f"Total samples: {n_samples} (Simulated 7 Days)")
+print(f"Saved to: {csv_filename}")
+print("\nDataset Statistics:")
 print("="*60)
 print(df.describe())
-print("\n🔍 Sample data (first 5 rows):")
+print("\nSample data (first 5 rows):")
 print("="*60)
 print(df.head())
-print("\n✨ Dataset ready for training!")
+print("\nDataset ready for training!")

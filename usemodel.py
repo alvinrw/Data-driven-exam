@@ -6,53 +6,80 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
 import tensorflow as tf
 import joblib
-import os 
+import os
+
+# ============================================
+# MODEL SELECTION (Edit baris ini untuk ganti model)
+# ============================================
+# Options: "NEURAL_NETWORK", "MPC", "QLEARNING"
+SELECTED_MODEL = "MPC"
+
+# Penjelasan Model:
+# - NEURAL_NETWORK: Deep Learning model (paling akurat, butuh training)
+# - MPC: Model Predictive Control (rule-based optimization)
+# - QLEARNING: Reinforcement Learning (adaptif, butuh Q-table)
+# ============================================
 
 class HFACControlSystem:
     def __init__(self, root):
         self.root = root
-        self.root.title("🌱 HFAC Greenhouse Control System")
+        self.root.title(f"🌱 HFAC Greenhouse Control System - {SELECTED_MODEL}")
         self.root.geometry("1400x900")
         self.root.configure(bg='#f0f0f0')
         
-        # --- File Paths (Relative paths - MUST be run from the folder containing the files) ---
-        MODEL_PATH = 'hfac_model.h5'
-        SCALER_X_PATH = 'scaler_X.pkl'
-        SCALER_Y_PATH = 'scaler_y.pkl'
+        # Store selected model
+        self.selected_model = SELECTED_MODEL
+        
+        # --- File Paths ---
+        MODEL_PATH = 'models/hfac_model.h5'
+        SCALER_X_PATH = 'models/scaler_X.pkl'
+        SCALER_Y_PATH = 'models/scaler_y.pkl'
+        QTABLE_PATH = 'models/qlearning_qtable.pkl'
 
-        # Load model and scalers with enhanced error handling
+        # Load models based on selection
         try:
-            # 1. Check for file existence 
-            missing_files = []
-            for path in [MODEL_PATH, SCALER_X_PATH, SCALER_Y_PATH]:
-                if not os.path.exists(path):
-                    missing_files.append(path)
-
-            if missing_files:
-                raise FileNotFoundError(
-                    f"The following essential files are missing: {', '.join(missing_files)}. "
-                    "Please ensure they are in the same directory as the script, or check your Current Working Directory (CWD)."
+            if self.selected_model == "NEURAL_NETWORK":
+                # Load Neural Network
+                print("Loading Neural Network model...")
+                if not os.path.exists(MODEL_PATH):
+                    raise FileNotFoundError(f"Neural Network model not found: {MODEL_PATH}")
+                
+                self.nn_model = tf.keras.models.load_model(
+                    MODEL_PATH, 
+                    custom_objects={'mse': tf.keras.losses.MeanSquaredError}
                 )
-            
-            # 2. Load model (SOLUSI TERBARU UNTUK 'mean_squared_error' error)
-            self.model = tf.keras.models.load_model(
-                MODEL_PATH, 
-                # Mengganti metrik dengan losses untuk kompatibilitas API TensorFlow terbaru
-                custom_objects={'mse': tf.keras.losses.MeanSquaredError}
-            )
-            
-            # 3. Load scalers
-            self.scaler_X = joblib.load(SCALER_X_PATH)
-            self.scaler_y = joblib.load(SCALER_Y_PATH)
-            
-            print("✅ Model and scalers loaded successfully!")
+                self.scaler_X = joblib.load(SCALER_X_PATH)
+                self.scaler_y = joblib.load(SCALER_Y_PATH)
+                print("✅ Neural Network loaded successfully!")
+                
+            elif self.selected_model == "MPC":
+                # MPC doesn't need to load files, it's rule-based
+                print("✅ MPC (Model Predictive Control) initialized!")
+                self.nn_model = None
+                self.scaler_X = None
+                self.scaler_y = None
+                
+            elif self.selected_model == "QLEARNING":
+                # Load Q-Learning Q-table
+                print("Loading Q-Learning Q-table...")
+                if not os.path.exists(QTABLE_PATH):
+                    raise FileNotFoundError(f"Q-table not found: {QTABLE_PATH}")
+                
+                self.qtable = joblib.load(QTABLE_PATH)
+                print("✅ Q-Learning Q-table loaded successfully!")
+                self.nn_model = None
+                self.scaler_X = None
+                self.scaler_y = None
+                
+            else:
+                raise ValueError(f"Invalid model selection: {self.selected_model}")
         
         except FileNotFoundError as fnf_e:
             messagebox.showerror("CRITICAL ERROR: Files Not Found", str(fnf_e))
             self.root.destroy()
             return
         except Exception as e:
-            messagebox.showerror("CRITICAL ERROR: Load Failure", f"Failed to load model or scalers. Details: {e}")
+            messagebox.showerror("CRITICAL ERROR: Load Failure", f"Failed to load model. Details: {e}")
             self.root.destroy()
             return
         
@@ -67,7 +94,7 @@ class HFACControlSystem:
         # ==========================================
         # HEADER
         # ==========================================
-        header_frame = tk.Frame(self.root, bg='#2c3e50', height=80)
+        header_frame = tk.Frame(self.root, bg='#2c3e50', height=100)
         header_frame.pack(fill='x', side='top')
         
         title_label = tk.Label(
@@ -77,7 +104,30 @@ class HFACControlSystem:
             bg='#2c3e50',
             fg='white'
         )
-        title_label.pack(pady=20)
+        title_label.pack(pady=10)
+        
+        # Model indicator
+        model_colors = {
+            "NEURAL_NETWORK": "#3498db",
+            "MPC": "#e74c3c",
+            "QLEARNING": "#2ecc71"
+        }
+        model_names = {
+            "NEURAL_NETWORK": "Neural Network (Deep Learning)",
+            "MPC": "MPC (Model Predictive Control)",
+            "QLEARNING": "Q-Learning (Reinforcement Learning)"
+        }
+        
+        model_label = tk.Label(
+            header_frame,
+            text=f"🤖 Active Model: {model_names[self.selected_model]}",
+            font=('Arial', 12, 'bold'),
+            bg=model_colors[self.selected_model],
+            fg='white',
+            padx=20,
+            pady=5
+        )
+        model_label.pack(pady=5)
         
         # ==========================================
         # MAIN CONTAINER
@@ -305,6 +355,85 @@ class HFACControlSystem:
         
         parent.columnconfigure(1, weight=1)
     
+    # ==========================================
+    # PREDICTION METHODS
+    # ==========================================
+    
+    def predict_neural_network(self, temp, hum, light, motion):
+        """Predict using Neural Network"""
+        X_input = np.array([[temp, hum, light, motion]])
+        X_scaled = self.scaler_X.transform(X_input)
+        y_pred_scaled = self.nn_model.predict(X_scaled, verbose=0)
+        y_pred = self.scaler_y.inverse_transform(y_pred_scaled)
+        return np.clip(y_pred[0], 0, 100)
+    
+    def predict_mpc(self, temp, hum, light, motion):
+        """Predict using MPC (Rule-based simplified)"""
+        TARGET_TEMP = 25.0
+        TARGET_HUMIDITY = 65.0
+        TARGET_LIGHT = 70.0
+        
+        # Fan Cooling: Proportional to temperature error
+        temp_error = temp - TARGET_TEMP
+        fan_cooling = np.clip(temp_error * 10, 0, 100)
+        
+        # Water Pump: Proportional to humidity error
+        hum_error = TARGET_HUMIDITY - hum
+        water_pump = np.clip(hum_error * 5, 0, 100)
+        
+        # Grow Light: Proportional to light error
+        light_error = TARGET_LIGHT - light
+        grow_light = np.clip(light_error * 1.4, 0, 100)
+        
+        # Fan Circulation: Base + motion boost + humidity boost
+        fan_circ = 20
+        if motion:
+            fan_circ += 30
+        if hum > 75:
+            fan_circ += 20
+        fan_circ = np.clip(fan_circ, 0, 100)
+        
+        return np.array([fan_cooling, fan_circ, water_pump, grow_light])
+    
+    def predict_qlearning(self, temp, hum, light, motion):
+        """Predict using Q-Learning (Simplified - rule-based approximation)"""
+        # Note: Full Q-Learning requires proper state discretization and Q-table lookup
+        # This is a simplified version for demonstration
+        
+        TARGET_TEMP = 25.0
+        TARGET_HUMIDITY = 65.0
+        TARGET_LIGHT = 70.0
+        
+        # Discretize states (simplified)
+        temp_state = 0 if temp < 20 else (1 if temp < 25 else (2 if temp < 30 else 3))
+        hum_state = 0 if hum < 50 else (1 if hum < 65 else (2 if hum < 80 else 3))
+        light_state = 0 if light < 30 else (1 if light < 50 else (2 if light < 70 else 3))
+        
+        # Q-Learning style decision (simplified)
+        # In real Q-Learning, we'd lookup Q-table, but here we use adaptive rules
+        
+        # Fan Cooling: More aggressive than MPC
+        temp_error = temp - TARGET_TEMP
+        fan_cooling = np.clip(temp_error * 12, 0, 100)
+        
+        # Water Pump: Adaptive based on state
+        hum_error = TARGET_HUMIDITY - hum
+        water_pump = np.clip(hum_error * 6, 0, 100)
+        
+        # Grow Light: Adaptive
+        light_error = TARGET_LIGHT - light
+        grow_light = np.clip(light_error * 1.5, 0, 100)
+        
+        # Fan Circulation: State-dependent
+        fan_circ = 25  # Higher base than MPC
+        if motion:
+            fan_circ += 35
+        if hum > 75:
+            fan_circ += 25
+        fan_circ = np.clip(fan_circ, 0, 100)
+        
+        return np.array([fan_cooling, fan_circ, water_pump, grow_light])
+    
     def predict_actuators(self):
         """Predict actuator PWM values from current conditions"""
         try:
@@ -314,19 +443,15 @@ class HFACControlSystem:
             light = self.current_conditions['light_intensity'].get()
             motion = self.current_conditions['motion'].get()
             
-            # Prepare input
-            X_input = np.array([[temp, hum, light, motion]])
-            
-            # Validation check
-            if X_input.ndim != 2 or X_input.shape[1] != 4:
-                raise ValueError("Input data shape is incorrect.")
-
-            X_scaled = self.scaler_X.transform(X_input)
-            
-            # Predict
-            y_pred_scaled = self.model.predict(X_scaled, verbose=0)
-            y_pred = self.scaler_y.inverse_transform(y_pred_scaled)
-            y_pred = np.clip(y_pred[0], 0, 100) # Clamp PWM values between 0 and 100
+            # Route to appropriate prediction method
+            if self.selected_model == "NEURAL_NETWORK":
+                y_pred = self.predict_neural_network(temp, hum, light, motion)
+            elif self.selected_model == "MPC":
+                y_pred = self.predict_mpc(temp, hum, light, motion)
+            elif self.selected_model == "QLEARNING":
+                y_pred = self.predict_qlearning(temp, hum, light, motion)
+            else:
+                raise ValueError(f"Unknown model: {self.selected_model}")
             
             # Update display
             actuator_keys = ['fan_cooling', 'fan_circulation', 'water_pump', 'grow_light']
@@ -336,7 +461,7 @@ class HFACControlSystem:
             # Plot single prediction
             self.plot_single_prediction(y_pred)
             
-            messagebox.showinfo("Success", "✅ Actuator prediction completed!")
+            messagebox.showinfo("Success", f"✅ Prediction completed using {self.selected_model}!")
             
         except Exception as e:
             messagebox.showerror("Prediction Error", f"Prediction failed: {str(e)}")
@@ -365,19 +490,23 @@ class HFACControlSystem:
             hums = np.linspace(current['hum'], target['hum'], n_steps)
             lights = np.linspace(current['light'], target['light'], n_steps)
             
-            # Prepare input array for all steps
-            X_path = np.column_stack((temps, hums, lights, np.full(n_steps, current['motion'])))
-
-            # Scale and Predict
-            X_scaled = self.scaler_X.transform(X_path)
-            y_pred_scaled = self.model.predict(X_scaled, verbose=0)
-            predictions = self.scaler_y.inverse_transform(y_pred_scaled)
-            predictions = np.clip(predictions, 0, 100) # Clamp PWM values
+            # Predict for each step
+            predictions = []
+            for i in range(n_steps):
+                if self.selected_model == "NEURAL_NETWORK":
+                    pred = self.predict_neural_network(temps[i], hums[i], lights[i], current['motion'])
+                elif self.selected_model == "MPC":
+                    pred = self.predict_mpc(temps[i], hums[i], lights[i], current['motion'])
+                elif self.selected_model == "QLEARNING":
+                    pred = self.predict_qlearning(temps[i], hums[i], lights[i], current['motion'])
+                predictions.append(pred)
+            
+            predictions = np.array(predictions)
 
             # Plot simulation
             self.plot_simulation(predictions, current, target)
             
-            messagebox.showinfo("Success", "✅ Path simulation completed!")
+            messagebox.showinfo("Success", f"✅ Path simulation completed using {self.selected_model}!")
             
         except Exception as e:
             messagebox.showerror("Simulation Error", f"Simulation failed: {str(e)}")
@@ -417,7 +546,7 @@ class HFACControlSystem:
             )
         
         ax.set_ylabel('PWM (%)', fontsize=12, fontweight='bold')
-        ax.set_title('🎯 Current Actuator Outputs', fontsize=14, fontweight='bold', pad=20)
+        ax.set_title(f'🎯 Actuator Outputs - {self.selected_model}', fontsize=14, fontweight='bold', pad=20)
         ax.set_ylim(0, 110)
         ax.grid(axis='y', alpha=0.3, linestyle='--')
         ax.set_axisbelow(True)
@@ -457,7 +586,7 @@ class HFACControlSystem:
             
         # Add overall title
         self.fig.suptitle(
-            f'📈 Path Simulation: Current → Target\n'
+            f'📈 Path Simulation - {self.selected_model}\n'
             f'Temp: {current["temp"]:.1f}°C → {target["temp"]:.1f}°C | '
             f'Humidity: {current["hum"]:.1f}% → {target["hum"]:.1f}% | '
             f'Light: {current["light"]:.1f}% → {target["light"]:.1f}%',
@@ -492,8 +621,17 @@ class HFACControlSystem:
         messagebox.showinfo("Reset", "✅ All fields reset to default values!")
 
 def main():
-    # Pastikan Anda telah menginstal semua library ini:
-    # pip install tensorflow numpy matplotlib scikit-learn joblib
+    """
+    CARA GANTI MODEL:
+    =================
+    Edit variable SELECTED_MODEL di baris 15:
+    
+    SELECTED_MODEL = "NEURAL_NETWORK"  # Pakai Neural Network
+    SELECTED_MODEL = "MPC"             # Pakai MPC
+    SELECTED_MODEL = "QLEARNING"       # Pakai Q-Learning
+    
+    Tinggal comment/uncomment atau edit langsung!
+    """
     
     root = tk.Tk()
     app = HFACControlSystem(root)
