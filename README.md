@@ -176,10 +176,4 @@ python usemodelV2.py
 
 - See `src/README.md` for detailed source code documentation
 
-## Author
 
-Alvin - Data-Driven Systems Exam
-
-## License
-
-Educational project for academic purposes.
