@@ -1,18 +1,17 @@
 """
-AUTOMATED RUNNER - GREENHOUSE CONTROL SYSTEM
-=============================================
+Automated Runner - Greenhouse Control System
 
-Script ini menjalankan semua file secara otomatis dengan urutan yang benar.
-Cocok untuk regenerate semua hasil dari awal.
+This script runs all files automatically in the correct order.
+Suitable for regenerating all results from scratch.
 
-PERINGATAN: Script ini akan menjalankan semua proses yang memakan waktu lama!
-- Generate dataset: ~1 detik
-- Neural Network training: ~2-5 menit
-- MPC control: ~1-2 menit
-- Q-Learning training: ~5-10 menit
-- Comparison analysis: ~30 detik
+WARNING: This script will run all time-consuming processes:
+- Generate dataset: ~1 second
+- Neural Network training: ~2-5 minutes
+- MPC control: ~1-2 minutes
+- Q-Learning training: ~5-10 minutes
+- Comparison analysis: ~30 seconds
 
-Total waktu: ~10-20 menit
+Total time: ~10-20 minutes
 """
 
 import subprocess

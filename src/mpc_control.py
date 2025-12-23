@@ -1,24 +1,14 @@
 """
-MODEL PREDICTIVE CONTROL (MPC) untuk Greenhouse Control System
-===============================================================
+Model Predictive Control (MPC) for Greenhouse Control System
 
-Algoritma: Model Predictive Control (MPC)
-Deskripsi: Metode kontrol yang memprediksi perilaku sistem di masa depan
-           dan mengoptimalkan aksi kontrol untuk mencapai target yang diinginkan.
+Algorithm: Model Predictive Control
+Description: Control method that predicts future system behavior and optimizes
+             control actions to achieve desired targets.
 
-Prinsip Kerja:
-1. Prediksi state sistem beberapa step ke depan (prediction horizon)
-2. Optimisasi control input untuk meminimalkan error dari target
-3. Eksekusi control input pertama, lalu ulangi proses (receding horizon)
-
-Kelebihan:
-- Dapat menangani constraints (batasan fisik sistem)
-- Optimal untuk multi-input multi-output (MIMO) systems
-- Dapat memprediksi dan mengantisipasi perubahan
-
-Kekurangan:
-- Komputasi lebih berat dibanding PID
-- Membutuhkan model sistem yang akurat
+Principles:
+1. Predict system state several steps ahead (prediction horizon)
+2. Optimize control input to minimize error from target
+3. Execute first control input, then repeat (receding horizon)
 """
 
 import numpy as np

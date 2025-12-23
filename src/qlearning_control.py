@@ -1,27 +1,16 @@
 """
-Q-LEARNING (REINFORCEMENT LEARNING) untuk Greenhouse Control System
-====================================================================
+Q-Learning (Reinforcement Learning) for Greenhouse Control System
 
-Algoritma: Q-Learning (Tabular Reinforcement Learning)
-Deskripsi: Agent belajar policy optimal melalui trial-and-error interaction
-           dengan environment, tanpa memerlukan model sistem.
+Algorithm: Q-Learning (Tabular Reinforcement Learning)
+Description: Agent learns optimal policy through trial-and-error interaction
+             with environment, without requiring a system model.
 
-Prinsip Kerja:
-1. Agent mengamati state environment (temperature, humidity, light)
-2. Memilih action (PWM values) berdasarkan Q-table
-3. Menerima reward berdasarkan seberapa dekat dengan target
-4. Update Q-table menggunakan Bellman equation
-5. Ulangi hingga konvergen ke policy optimal
-
-Kelebihan:
-- Model-free: tidak perlu tahu dinamika sistem
-- Dapat belajar policy optimal dari experience
-- Robust terhadap perubahan sistem
-
-Kekurangan:
-- Membutuhkan banyak iterasi untuk konvergen
-- Curse of dimensionality untuk continuous state space
-- Exploration vs exploitation trade-off
+Principles:
+1. Agent observes environment state (temperature, humidity, light)
+2. Selects action (PWM values) based on Q-table
+3. Receives reward based on proximity to target
+4. Updates Q-table using Bellman equation
+5. Repeats until converging to optimal policy
 """
 
 import numpy as np

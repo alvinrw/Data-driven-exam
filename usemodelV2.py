@@ -9,11 +9,9 @@ import joblib
 import os
 from datetime import datetime
 
-# ============================================
-# MODEL SELECTION
-# ============================================
-SELECTED_MODEL = "NEURAL_NETWORK"  # Options: "NEURAL_NETWORK", "MPC", "QLEARNING"
-# ============================================
+# Model Selection
+# Options: "NEURAL_NETWORK", "MPC", "QLEARNING"
+SELECTED_MODEL = "QLEARNING"
 
 class HFACControlSystemV2:
     def __init__(self, root):
@@ -715,10 +713,10 @@ def main():
     - Single model prediction with detailed analysis
     - Transition simulation from current to target
     - Multi-model comparison
-    - Performance metrics
-    - Save results
+    - Performance metrics and visualization
+    - Export results
     
-    To change model, edit SELECTED_MODEL at line 14
+    To change model, edit SELECTED_MODEL at line 13
     """
     root = tk.Tk()
     app = HFACControlSystemV2(root)

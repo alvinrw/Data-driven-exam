@@ -1,13 +1,12 @@
 """
-PERBANDINGAN ALGORITMA KONTROL GREENHOUSE
-==========================================
+Greenhouse Control Algorithm Comparison
 
-File ini membandingkan performa dari berbagai metode kontrol:
+This file compares the performance of various control methods:
 1. Neural Network (Deep Learning)
 2. Model Predictive Control (MPC)
 3. Q-Learning (Reinforcement Learning)
 
-Tujuan: Analisis komparatif untuk menentukan metode terbaik
+Goal: Comparative analysis to determine the best method
 """
 
 import pandas as pd
@@ -293,42 +292,14 @@ if len(df_metrics) > 0:
     print("=" * 70)
     
     print("""
-    KELEBIHAN & KEKURANGAN SETIAP METODE:
+    Algorithm Comparison Summary:
     
-    1. NEURAL NETWORK (Deep Learning)
-       ✓ Kelebihan:
-         - Sangat akurat untuk pattern recognition
-         - Cepat dalam inference (setelah training)
-         - Dapat menangani non-linear relationships
-       ✗ Kekurangan:
-         - Membutuhkan banyak data untuk training
-         - Black-box (sulit interpretasi)
-         - Tidak ada jaminan stabilitas
+    1. Neural Network: Best for accuracy and pattern recognition
+    2. Model Predictive Control: Best for optimal control with constraints
+    3. Q-Learning: Best for adaptability and model-free learning
     
-    2. MODEL PREDICTIVE CONTROL (MPC)
-       ✓ Kelebihan:
-         - Optimal control dengan prediction horizon
-         - Dapat menangani constraints
-         - Robust dan predictable
-       ✗ Kekurangan:
-         - Komputasi lebih berat (optimization setiap step)
-         - Membutuhkan model sistem yang akurat
-         - Tuning parameter cukup kompleks
-    
-    3. Q-LEARNING (Reinforcement Learning)
-       ✓ Kelebihan:
-         - Model-free (tidak perlu tahu dinamika sistem)
-         - Dapat belajar dari experience
-         - Adaptif terhadap perubahan
-       ✗ Kekurangan:
-         - Training membutuhkan banyak iterasi
-         - Curse of dimensionality
-         - Exploration vs exploitation trade-off
-    
-    REKOMENDASI:
-    - Untuk akurasi tinggi: Neural Network
-    - Untuk optimal control: MPC
-    - Untuk adaptability: Q-Learning
+    Each method has trade-offs between accuracy, computational cost,
+    and implementation complexity. Choose based on your specific requirements.
     """)
 
 print("\nFiles generated:")

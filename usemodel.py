@@ -8,22 +8,14 @@ import tensorflow as tf
 import joblib
 import os
 
-# ============================================
-# MODEL SELECTION (Edit baris ini untuk ganti model)
-# ============================================
+# Model Selection
 # Options: "NEURAL_NETWORK", "MPC", "QLEARNING"
 SELECTED_MODEL = "MPC"
-
-# Penjelasan Model:
-# - NEURAL_NETWORK: Deep Learning model (paling akurat, butuh training)
-# - MPC: Model Predictive Control (rule-based optimization)
-# - QLEARNING: Reinforcement Learning (adaptif, butuh Q-table)
-# ============================================
 
 class HFACControlSystem:
     def __init__(self, root):
         self.root = root
-        self.root.title(f"🌱 HFAC Greenhouse Control System - {SELECTED_MODEL}")
+        self.root.title(f"HFAC Greenhouse Control System - {SELECTED_MODEL}")
         self.root.geometry("1400x900")
         self.root.configure(bg='#f0f0f0')
         
@@ -99,7 +91,7 @@ class HFACControlSystem:
         
         title_label = tk.Label(
             header_frame, 
-            text="🌱 HFAC Greenhouse Control System", 
+            text="HFAC Greenhouse Control System", 
             font=('Arial', 24, 'bold'),
             bg='#2c3e50',
             fg='white'
@@ -120,7 +112,7 @@ class HFACControlSystem:
         
         model_label = tk.Label(
             header_frame,
-            text=f"🤖 Active Model: {model_names[self.selected_model]}",
+            text=f"Active Model: {model_names[self.selected_model]}",
             font=('Arial', 12, 'bold'),
             bg=model_colors[self.selected_model],
             fg='white',
@@ -150,7 +142,7 @@ class HFACControlSystem:
         # === CURRENT CONDITIONS ===
         current_frame = tk.LabelFrame(
             left_panel, 
-            text="📊 Current Conditions", 
+            text="Current Conditions", 
             font=('Arial', 14, 'bold'),
             bg='white',
             fg='#34495e',
@@ -164,7 +156,7 @@ class HFACControlSystem:
         # === TARGET CONDITIONS ===
         target_frame = tk.LabelFrame(
             left_panel, 
-            text="🎯 Target Conditions", 
+            text="Target Conditions", 
             font=('Arial', 14, 'bold'),
             bg='white',
             fg='#34495e',
@@ -181,7 +173,7 @@ class HFACControlSystem:
         
         predict_btn = tk.Button(
             button_frame,
-            text="🔮 Predict Actuators",
+            text="Predict Actuators",
             font=('Arial', 12, 'bold'),
             bg='#3498db',
             fg='white',
@@ -193,7 +185,7 @@ class HFACControlSystem:
         
         simulate_btn = tk.Button(
             button_frame,
-            text="📈 Simulate Path",
+            text="Simulate Path",
             font=('Arial', 12, 'bold'),
             bg='#2ecc71',
             fg='white',
@@ -205,7 +197,7 @@ class HFACControlSystem:
         
         reset_btn = tk.Button(
             button_frame,
-            text="🔄 Reset",
+            text="Reset",
             font=('Arial', 12, 'bold'),
             bg='#95a5a6',
             fg='white',
@@ -218,7 +210,7 @@ class HFACControlSystem:
         # === ACTUATOR OUTPUT DISPLAY ===
         output_frame = tk.LabelFrame(
             left_panel, 
-            text="⚡ Actuator Outputs (PWM %)", 
+            text="Actuator Outputs (PWM %)", 
             font=('Arial', 14, 'bold'),
             bg='white',
             fg='#34495e',
@@ -235,7 +227,7 @@ class HFACControlSystem:
         
         viz_title = tk.Label(
             right_panel,
-            text="📊 Actuator Control Visualization",
+            text="Actuator Control Visualization",
             font=('Arial', 16, 'bold'),
             bg='white',
             fg='#2c3e50'
@@ -254,10 +246,10 @@ class HFACControlSystem:
         """Create input fields for sensor values"""
         
         fields = [
-            ("🌡️ Temperature (°C):", "temperature", 15, 40, 25),
-            ("💧 Humidity (%RH):", "humidity", 30, 90, 65),
-            ("☀️ Light Intensity (%):", "light_intensity", 0, 100, 70),
-            ("👤 Motion Detected:", "motion", 0, 1, 0)
+            ("Temperature (°C):", "temperature", 15, 40, 25),
+            ("Humidity (%RH):", "humidity", 30, 90, 65),
+            ("Light Intensity (%):", "light_intensity", 0, 100, 70),
+            ("Motion Detected:", "motion", 0, 1, 0)
         ]
         
         storage = self.current_conditions if is_current else self.target_conditions
@@ -321,10 +313,10 @@ class HFACControlSystem:
         """Create display for actuator PWM outputs"""
         
         actuators = [
-            ("🌬️ Fan Cooling:", "fan_cooling"),
-            ("💨 Fan Circulation:", "fan_circulation"),
-            ("💦 Water Pump:", "water_pump"),
-            ("💡 Grow Light:", "grow_light")
+            ("Fan Cooling:", "fan_cooling"),
+            ("Fan Circulation:", "fan_circulation"),
+            ("Water Pump:", "water_pump"),
+            ("Grow Light:", "grow_light")
         ]
         
         for i, (label, key) in enumerate(actuators):
@@ -461,7 +453,7 @@ class HFACControlSystem:
             # Plot single prediction
             self.plot_single_prediction(y_pred)
             
-            messagebox.showinfo("Success", f"✅ Prediction completed using {self.selected_model}!")
+            messagebox.showinfo("Success", f"Prediction completed using {self.selected_model}")
             
         except Exception as e:
             messagebox.showerror("Prediction Error", f"Prediction failed: {str(e)}")
@@ -506,7 +498,7 @@ class HFACControlSystem:
             # Plot simulation
             self.plot_simulation(predictions, current, target)
             
-            messagebox.showinfo("Success", f"✅ Path simulation completed using {self.selected_model}!")
+            messagebox.showinfo("Success", f"Path simulation completed using {self.selected_model}")
             
         except Exception as e:
             messagebox.showerror("Simulation Error", f"Simulation failed: {str(e)}")
@@ -517,7 +509,7 @@ class HFACControlSystem:
         ax = self.fig.add_subplot(111)
         ax.text(
             0.5, 0.5, 
-            "👆 Click 'Predict' or 'Simulate' to see visualization",
+            "Click 'Predict' or 'Simulate' to see visualization",
             ha='center', va='center',
             fontsize=14, color='#7f8c8d',
             transform=ax.transAxes
@@ -546,7 +538,7 @@ class HFACControlSystem:
             )
         
         ax.set_ylabel('PWM (%)', fontsize=12, fontweight='bold')
-        ax.set_title(f'🎯 Actuator Outputs - {self.selected_model}', fontsize=14, fontweight='bold', pad=20)
+        ax.set_title(f'Actuator Outputs - {self.selected_model}', fontsize=14, fontweight='bold', pad=20)
         ax.set_ylim(0, 110)
         ax.grid(axis='y', alpha=0.3, linestyle='--')
         ax.set_axisbelow(True)
@@ -586,7 +578,7 @@ class HFACControlSystem:
             
         # Add overall title
         self.fig.suptitle(
-            f'📈 Path Simulation - {self.selected_model}\n'
+            f'Path Simulation - {self.selected_model}\n'
             f'Temp: {current["temp"]:.1f}°C → {target["temp"]:.1f}°C | '
             f'Humidity: {current["hum"]:.1f}% → {target["hum"]:.1f}% | '
             f'Light: {current["light"]:.1f}% → {target["light"]:.1f}%',
@@ -618,19 +610,16 @@ class HFACControlSystem:
         # Reset plot
         self.plot_empty_state()
         
-        messagebox.showinfo("Reset", "✅ All fields reset to default values!")
+        messagebox.showinfo("Reset", "All fields reset to default values")
 
 def main():
     """
-    CARA GANTI MODEL:
-    =================
-    Edit variable SELECTED_MODEL di baris 15:
+    HFAC Greenhouse Control System
     
-    SELECTED_MODEL = "NEURAL_NETWORK"  # Pakai Neural Network
-    SELECTED_MODEL = "MPC"             # Pakai MPC
-    SELECTED_MODEL = "QLEARNING"       # Pakai Q-Learning
-    
-    Tinggal comment/uncomment atau edit langsung!
+    To change the model, edit SELECTED_MODEL at line 13:
+    - "NEURAL_NETWORK": Deep Learning model
+    - "MPC": Model Predictive Control
+    - "QLEARNING": Q-Learning Reinforcement Learning
     """
     
     root = tk.Tk()
